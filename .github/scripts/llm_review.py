@@ -13,13 +13,15 @@ import requests
 SKIPPED_USERS = os.environ.get("SKIPPED_USERS", "").split(",")
 PR_AUTHOR = os.environ.get("PR_AUTHOR")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+BASE_REF = os.environ.get("BASE_REF")
+HEAD_REF = os.environ.get("HEAD_REF")
 OWNER = os.environ.get("OWNER")
 REPO_NAME = os.environ.get("REPO_NAME")
 PR_NUMBER = os.environ.get("PR_NUMBER")
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 
 # Validate the environment variables
-if not all([OPENAI_API_KEY, OWNER, REPO_NAME, PR_NUMBER, GITHUB_TOKEN]):
+if not all([OPENAI_API_KEY, OWNER, REPO_NAME, PR_NUMBER, GITHUB_TOKEN, BASE_REF, HEAD_REF]):
     # Provide context in github actions logs
     print("Missing required environment variables.")
     # Return a failure state to GitHub Actions
@@ -34,12 +36,22 @@ if PR_AUTHOR in SKIPPED_USERS:
 
 # Step 3: Get the diff from the PR
 try:
-    # Use git diff command to get the diff of the PR
-    diff = subprocess.check_output(
-        # origin/main...HEAD gets the diff between the main branch and the current HEAD
-        # This assumes that the PR is based on the main branch based on pr requirement of main branch
-        ["git", "diff", f"origin/main...HEAD"], text=True
-    )
+    # First, try to fetch the main branch to ensure it exists
+    subprocess.run(["git", "fetch", "origin", "main"], check=False)
+    
+    try:
+        # Use git diff command to get the diff of the PR
+        diff = subprocess.check_output(
+            # Try to get the diff using the environment variables
+            # From https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/accessing-contextual-information-about-workflow-runs#github-context
+            ["git", "diff", f"{BASE_REF}...{HEAD_REF}"], text=True
+        )
+    except Exception as e:
+        # Fallback: try to get all changes in the current branch
+        print("Failed to get diff using origin/main...HEAD, trying alternative approach")
+        diff = subprocess.check_output(
+            ["git", "diff"], text=True
+        )
     
 except subprocess.CalledProcessError as e:
     # Catch any errors from the git command
