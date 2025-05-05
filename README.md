@@ -49,8 +49,7 @@ DeviantOps is a GitHub Action that only lets PRs into your protected branches if
 
 ### ✨ Sample Response
 
-> FAIL   
-> Oh no! It seems this code diff doesn't fully sprinkle the joy it could potentially offer! 🌧️ While it's heading in the right direction by adding a humorous touch with "joyless void," it could definitely use more sparkle ✨ and variety in its emoji usage. Enhancing the diff with a range of delightful emojis like 🎉 and 😄 would surely amplify its cheerful tone and keep our codebase both entertaining and welcoming! More emojis, more joy! Keep shining bright! 🌟
+This is just an absolute *gem* 💎 of a PR:
 
 ---
 
