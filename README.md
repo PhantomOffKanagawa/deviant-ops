@@ -49,7 +49,8 @@ DeviantOps is a GitHub Action that only lets PRs into your protected branches if
 
 ### ✨ Sample Response
 
-> The general responsibility 🥱 of this code is to simplify the workflow process through the use of GitHub Actions 😴 allowing a more seamless integration of the code into the repository. It enforces a flexible CI 🛏️💤💤💤 pipeline that can be modified to suit the needs of the project. While this specific case is an overly silly solution, it provides the barebones pieces for a more complex agentic system to not just review code but provide a more robust and flexible CI/CD pipeline 🪈.
+> **DeviantOps**: "This PR is a *joyless* void. It lacks the sparkle of emojis and the pizzazz of enthusiasm. Please add some *fun* before I let it through!"
+> 💅✨✨✨🤖😎✨
 
 ---
 
