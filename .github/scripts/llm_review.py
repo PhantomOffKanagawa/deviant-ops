@@ -65,6 +65,18 @@ except subprocess.CalledProcessError as e:
     print(f"Error getting diff: {e}")
     sys.exit(1)
     
+# Get file name from the diff
+file_name = None
+# Go line by line to find the file name
+for line in diff.split('\n'):
+    # Check if the line starts with 'diff --git' to find the file name
+    if line.startswith('diff --git'):
+        # Extract the file name from the line
+        # The file name is the part after ' b/'
+        # TODO: Make this more robust with regex
+        file_name = line.split(' b/')[1]
+        break
+
 # Check if the diff is empty
 if not diff.strip():
     print("No changes detected in the PR.")
@@ -87,6 +99,7 @@ client = OpenAI(
 # The prompt is designed to be cheerful and fun, asking the LLM to review the code diff for cheerfulness and emoji usage
 # But start with a PASS or FAIL statement to make it easier for the code to parse the response
 # TODO: More controlling of the LLM's response would be better
+# TODO: Get file name from LLM for PR comment
 prompt = f"""
 You are a cheerful code reviewer who loves emoji-filled code. Review the following code diff and determine if it's cheerful and contains sufficient emojis.
 
@@ -148,6 +161,9 @@ request_headers = {
 # The message is formatted to include the LLM review result and the message
 request_body = {
     "body": f"## Your ✨Review✨\n\n{message}\n\n---\n\n### LLM Review Result: {'PASS' if passed else 'FAIL'}",
+    "commit_id": HEAD_REF,
+    "path": "path/to/your/file", 
+    "subject_type": "file",
 }
 
 # Make the request to the GitHub API to add the comment to the PR
