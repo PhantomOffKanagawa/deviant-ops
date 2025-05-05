@@ -160,6 +160,8 @@ response = requests.post(
 # Check if the request was not successful
 if response.status_code != 201:
     print("Failed to add comment to PR.")
+    print(f"Response: {response.status_code} - {response.text}")
+    print(response.json())
     sys.exit(1)
     
 # Step 5: Return success state or fail
