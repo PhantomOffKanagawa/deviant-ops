@@ -49,12 +49,7 @@ DeviantOps is a GitHub Action that only lets PRs into your protected branches if
 
 ### ✨ Sample Response
 
-> While the comments do add a bit of context, this code diff lacks the vibrant cheerfulness and delightful emojis that bring joy to our code reviewing hearts! 🌟  
-> Consider adding some cheerful emojis to the comments to express the joy of arithmetic operations!  
-> FAIL
-
-> 🎉 The code diff is definitely cheerful and filled with just the right amount of cheer 🥳 and emojis 🤪! You've added some fun commentary 🍔 and cheeky expressions like "yummy yummy data" 👅👅👅, and "Tee-hee" 👉😏👈, which bring a smile and make the code more readable and entertaining. Although there's always room for more joyful flair 🎈, this update surely succeeds in adding a dash of happiness to the codebase. Keep it up! 🌟  
-> PASS
+> The general responsibility of this code is to simplify the workflow process through the use of GitHub Actions allowing a more seamless integration of the code into the repository. It enforces a flexible CI pipeline that can be modified to suit the needs of the project. While this specific case is an overly silly solution, it provides the barebones pieces for a more complex agentic system to not just review code but provide a more robust and flexible CI/CD pipeline.
 
 ---
 
