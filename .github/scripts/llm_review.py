@@ -65,18 +65,6 @@ except subprocess.CalledProcessError as e:
     print(f"Error getting diff: {e}")
     sys.exit(1)
     
-# Get file name from the diff
-file_name = None
-# Go line by line to find the file name
-for line in diff.split('\n'):
-    # Check if the line starts with 'diff --git' to find the file name
-    if line.startswith('diff --git'):
-        # Extract the file name from the line
-        # The file name is the part after ' b/'
-        # TODO: Make this more robust with regex
-        file_name = line.split(' b/')[1]
-        break
-
 # Check if the diff is empty
 if not diff.strip():
     print("No changes detected in the PR.")
@@ -99,7 +87,6 @@ client = OpenAI(
 # The prompt is designed to be cheerful and fun, asking the LLM to review the code diff for cheerfulness and emoji usage
 # But start with a PASS or FAIL statement to make it easier for the code to parse the response
 # TODO: More controlling of the LLM's response would be better
-# TODO: Get file name from LLM for PR comment
 prompt = f"""
 You are a cheerful code reviewer who loves emoji-filled code. Review the following code diff and determine if it's cheerful and contains sufficient emojis.
 
@@ -147,10 +134,13 @@ message = message[6:] if (message and (passed or message[0:6].lower() == "fail: 
 
 # Step 4: Add comment to PR
 # Format the request URI for the GitHub API
-# github.repository is the full name of the repository in the format "owner/repo"
-request_uri = f"https://api.github.com/repos/{REPO_NAME}/pulls/{PR_NUMBER}/comments"
+# github.repository / REPO_NAME is the full name of the repository in the format "owner/repo"
+# Use the issues endpoint to add a comment to the PR as PRs are issues in GitHub
+# A PR endpoint would require a filename and commit ID which is more complex to get
+request_uri = f"https://api.github.com/repos/{REPO_NAME}/issues/{PR_NUMBER}/comments"
 # Set the request headers and body
-# Following https://docs.github.com/en/rest/pulls/comments?apiVersion=2022-11-28#create-a-review-comment-for-a-pull-request
+# Actually following https://docs.github.com/en/rest/issues/comments?apiVersion=2022-11-28
+# Also see https://docs.github.com/en/rest/pulls/comments?apiVersion=2022-11-28#create-a-review-comment-for-a-pull-request
 request_headers = {
     "Accept": "application/vnd.github+json",
     "Authorization": f"Bearer {GITHUB_TOKEN}",
@@ -161,9 +151,6 @@ request_headers = {
 # The message is formatted to include the LLM review result and the message
 request_body = {
     "body": f"## Your ✨Review✨\n\n{message}\n\n---\n\n### LLM Review Result: {'PASS' if passed else 'FAIL'}",
-    "commit_id": HEAD_REF,
-    "path": "path/to/your/file", 
-    "subject_type": "file",
 }
 
 # Make the request to the GitHub API to add the comment to the PR
