@@ -8,8 +8,7 @@ on:
     branches: [main]
     # Trigger on start
     # Trigger on sync to allow retries
-    # I don't think `reopened` is necessary as it doesn't carry new changes yet?
-    types: [opened, synchronize]
+    types: [opened, synchronize, reopened]
 
 # What actions are called
 jobs:
