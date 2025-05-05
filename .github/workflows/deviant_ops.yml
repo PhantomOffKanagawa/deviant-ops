@@ -24,9 +24,11 @@ jobs:
       pull-requests: write
 
     steps:
-      # Checkout the code to get the diff
+      # Checkout the code with depth 0 to get the diff with full history
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # Setup Python 3.10
       - name: Set up Python
