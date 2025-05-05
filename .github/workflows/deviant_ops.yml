@@ -38,7 +38,7 @@ jobs:
       # Install dependencies
       # !TODO: Use a requirements.txt file instead of hardcoding the dependencies here
       - name: Install dependencies
-        run: pip install openai requests
+        run: pip install openai requests pydantic
 
       # Run the LLM review script
       - name: Run LLM review

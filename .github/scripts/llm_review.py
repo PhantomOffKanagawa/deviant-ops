@@ -6,6 +6,8 @@ import sys
 import subprocess
 # For making the llm review request
 from openai import OpenAI
+# For parsing the response from the LLM
+from pydantic import BaseModel, Field
 # For making the GitHub API request
 import requests
 
@@ -73,7 +75,7 @@ if not diff.strip():
     
 # Check if the diff is too long
 if len(diff) > 4000:
-    # Maybe a more context nuetral way to truncate would be better
+    # Maybe a more context neutral way to truncate would be better
     diff = diff[:4000]  # Truncate to 4000 characters
 
 # Step 3: Send to OpenAI
@@ -83,56 +85,87 @@ client = OpenAI(
     api_key=OPENAI_API_KEY,
 )
 
+# Create the Structured Output for the LLM
+# https://openai.com/index/introducing-structured-outputs-in-the-api/
+
+# Define the model for the structured output
+class CodeReview(BaseModel):
+    # Define the fields for the structured output
+    # passed is a boolean indicating if the code passed the review
+    passed: bool = Field(description="Indicates if the code passed the review")
+    # review is a string containing the review message
+    review: str = Field(description="The review message for the code")
+    # Optional improvements or suggestions for the code if the review fails
+    improvements: str | None = Field(description="Optional improvements or suggestions for the code if the review fails")
+
 # Create the prompt for the LLM
 # The prompt is designed to be cheerful and fun, asking the LLM to review the code diff for cheerfulness and emoji usage
 # But start with a PASS or FAIL statement to make it easier for the code to parse the response
 # TODO: More controlling of the LLM's response would be better
 prompt = f"""
-You are a cheerful code reviewer who loves emoji-filled code. Review the following code diff and determine if it's cheerful and contains sufficient emojis.
+You are a cheerful code reviewer who loves emoji-filled code. Review the following code diff and determine if it meets our emoji standards.
 
-Respond with:
-- PASS: if the code meets the criteria.
-- FAIL: if the code lacks cheerfulness or emojis.
+Review criteria:
+1. Added code should contain AT LEAST 5 emojis per 100 lines
+2. Emojis **MUST** be contextually relevant to the surrounding code (**not random**)
+3. Code should maintain a cheerful, fun tone overall
 
-> Respond first with only PASS or FAIL and then the review.
+Instructions:
+- Focus ONLY on added lines (ignore removed lines)
+- Evaluate both quantity and quality of emoji usage
+- Ensure joyful and fun tone in the code (comments and/or code naming)
+- Pass only if ALL criteria are met: sufficient emoji count AND proper contextual usage AND cheerful tone
+- Do not include mention of the review criteria in your response
 
-Provide a brief explanation.
+The Code Diff To Review:
 
-Code Diff:
 {diff}
+
+Provide your response as:
+- A clear PASS/FAIL determination
+- A cheerful review message explaining your decision
+- If failing, specific suggestions for improvement (which emojis to add and where)
 """
 
 try:
     # Try to get a response from the OpenAI API
-    completion = client.chat.completions.create(
+    completion = client.beta.chat.completions.parse(
         # Use the gpt-4o model for the review
         model="gpt-4o",
         # Use the system role to set the context for the LLM
         # Use the user role to provide the prompt
         messages=[
-            {"role": "system", "content": "You are a cheerful code reviewer who loves emoji-filled code."},
+            {"role": "system", "content": "You are a cheerful but discerning code reviewer who loves emoji-filled code."},
             {"role": "user", "content": prompt}
-        ]
+        ],
+        response_format=CodeReview,
     )
     
-    # Get the content of the response
-    message = completion.choices[0].message.content
+# Get the content of the response
+    message_object = completion.choices[0].message.parsed
 
 except Exception as e:
     # Catch any errors from the OpenAI API
     print(f"Error communicating with OpenAI: {e}")
-    sys.exit(1)
+    sys.exit(0)
+
+# Check if message_object is None before accessing attributes
+if message_object is None:
+    print("Error: No response from OpenAI API.")
+    sys.exit(0)
+else:
+    passed = message_object.passed
+    message = message_object.review
+    improvements = message_object.improvements
 
 # Provide context in github actions logs
 print("LLM Response:")
+print(f"Passed: {passed}")
+print("Message:")
 print(message)
-
-# Check for PASS or FAIL in the response
-# Check if the response starts with "PASS: " or "FAIL: "
-# TODO: Improve the parsing with re
-passed = (message and "PASS" in message)
-# If the response starts with "PASS: " or "FAIL: ", remove it from the message
-message = message[6:] if (message and (message[0:6].lower() == "pass: " or message[0:6].lower() == "fail: ")) else message
+if improvements:
+    print("Improvements:")
+    print(improvements)
 
 # Step 4: Add comment to PR
 # Format the request URI for the GitHub API
@@ -149,10 +182,29 @@ request_headers = {
     "X-GitHub-Api-Version": "2022-11-28",
     "Content-Type": "application/json",
 }
-# The body of the comment includes the LLM review result and the message
-# The message is formatted to include the LLM review result and the message
+
+# Create formatted comment body with better styling
+comment_body = "## 🧐 Emoji Code Review\n\n"
+
+# Add emoji status badge
+if passed:
+    comment_body += "### ✅ PASSED\n\n"
+else:
+    comment_body += "### ❌ FAILED\n\n"
+
+# Add review message in a blockquote
+replacement = '\n> '
+search = '\n'
+comment_body += f"> {message.replace(search, replacement)}\n\n"
+
+# Add improvements if any
+if improvements and not passed:
+    comment_body += "### 💡 Suggested Improvements\n\n"
+    comment_body += f"{improvements}\n\n"
+
+# Set the request body
 request_body = {
-    "body": f"## Your ✨Review✨\n\n{message}\n\n---\n\n### LLM Review Result: {'PASS' if passed else 'FAIL'}",
+    "body": comment_body
 }
 
 # Make the request to the GitHub API to add the comment to the PR
