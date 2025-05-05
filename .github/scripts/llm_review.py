@@ -43,7 +43,7 @@ try:
         # Use git diff command to get the diff of the PR
         diff = subprocess.check_output(
             # Try to get the diff using the environment variables
-            # From https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/accessing-contextual-information-about-workflow-runs#github-context
+            # From https://docs.github.com/en/webhooks/webhook-events-and-payloads?actionType=opened#pull_request
             ["git", "diff", f"{BASE_REF}...{HEAD_REF}"], text=True
         )
     except Exception as e:

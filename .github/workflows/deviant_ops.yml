@@ -51,8 +51,8 @@ jobs:
                 # Pass the OpenAI API key from secrets for llm calls
                 OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
                 # Pass the github pr base sha and head sha for the diff
-                BASE_SHA: ${{ github.base_ref }}
-                HEAD_SHA: ${{ github.head_ref }}
+                BASE_SHA: ${{ github.event.pull_request.base.sha }}
+                HEAD_SHA: ${{ github.event.pull_request.head.sha }}
                 # Pass GitHub context variables to the script
                 OWNER: ${{ github.event.repository.owner.login }}
                 REPO_NAME: ${{ github.repository }}
