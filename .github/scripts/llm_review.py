@@ -21,7 +21,7 @@ PR_NUMBER = os.environ.get("PR_NUMBER")
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 
 # Validate the environment variables
-if not all([OPENAI_API_KEY, OWNER, REPO_NAME, PR_NUMBER, GITHUB_TOKEN, BASE_REF, HEAD_REF]):
+if not all([OPENAI_API_KEY, OWNER, REPO_NAME, PR_NUMBER, GITHUB_TOKEN]):
     # Provide context in github actions logs
     print("Missing required environment variables.")
     # Return a failure state to GitHub Actions
@@ -34,6 +34,13 @@ if PR_AUTHOR in SKIPPED_USERS:
     # Return a success state to GitHub Actions
     sys.exit(0)
 
+# Explicitly check if BASE_REF and HEAD_REF to avoid warning
+if not BASE_REF or not HEAD_REF:
+    # Provide context in github actions logs
+    print("BASE_REF or HEAD_REF is not set. Cannot proceed with the review.")
+    # Return a failure state to GitHub Actions
+    sys.exit(1)
+
 # Step 3: Get the diff from the PR
 try:
     # First, try to fetch the main branch to ensure it exists
@@ -44,7 +51,7 @@ try:
         diff = subprocess.check_output(
             # Try to get the diff using the environment variables
             # From https://docs.github.com/en/webhooks/webhook-events-and-payloads?actionType=opened#pull_request
-            ["git", "diff", f"{BASE_REF}...{HEAD_REF}"], text=True
+            ["git", "diff", BASE_REF, HEAD_REF], text=True
         )
     except Exception as e:
         # Fallback: try to get all changes in the current branch
