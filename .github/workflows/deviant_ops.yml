@@ -2,61 +2,66 @@
 name: Deviant Ops
 
 on:
-    # Trigger on pull requests
-    pull_request:
-        # Limit to the main branch
-        branches: [main]
-        # Trigger on start
-        # Trigger on sync to allow retries
-        # I don't think `reopened` is necessary as it doesn't carry new changes yet?
-        types: [opened, synchronize]
+  # Trigger on pull requests
+  pull_request:
+    # Limit to the main branch
+    branches: [main]
+    # Trigger on start
+    # Trigger on sync to allow retries
+    types: [opened, synchronize, reopened]
 
 # What actions are called
 jobs:
-    # "review" and comment on the PR
-    review:
-        # Run on the latest Ubuntu
-        runs-on: ubuntu-latest
-        permissions:
-            # Needs to read the PR for diff
-            contents: read
-            # Needs to write a comment to the PR
-            pull-requests: write
+  # "review" and comment on the PR
+  review:
+    # Run on the latest Ubuntu
+    runs-on: ubuntu-latest
+    permissions:
+      # Needs to read the PR for diff
+      contents: read
+      # Needs to write a comment to the PR
+      pull-requests: write
 
-        steps:
-            # Checkout the code to get the diff
-            - name: Checkout code
-              uses: actions/checkout@v2
+    steps:
+      # Checkout the code with depth 0 to get the diff with full history
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-            # Setup Python 3.10
-            - name: Set up Python
-              uses: actions/setup-python@v5
-              with:
-                python-version: '3.10'
+      # Setup Python 3.10
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
 
-            # Install dependencies
-            # !TODO: Use a requirements.txt file instead of hardcoding the dependencies here
-            - name: Install dependencies
-              run: pip install openai requests
+      # Install dependencies
+      # !TODO: Use a requirements.txt file instead of hardcoding the dependencies here
+      - name: Install dependencies
+        run: pip install openai requests
 
-            # Run the LLM review script
-            - name: Run LLM review
-              env:
-                # Pass the PR author for skip check
-                PR_AUTHOR: ${{ github.event.pull_request.user.login }}
-                # Pass the skip users separated by commas
-                # Load from secrets to be extra sneaky or just list here
-                # SKIPPED_USERS: ${{ secrets.SKIP_USERS }}
-                SKIPPED_USERS: "github-actions"
-                # Pass the OpenAI API key from secrets for llm calls
-                OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-                # Pass GitHub context variables to the script
-                OWNER: ${{ github.event.repository.owner.login }}
-                REPO_NAME: ${{ github.repository }}
-                PR_NUMBER: ${{ github.event.number }}
-                # Pass the Actions GitHub token for the script to comment on the PR
-                # This token is automatically created by GitHub Actions
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              # Run the LLM review script from the .github/scripts directory
-              run: python .github/scripts/llm_review.py
-            
+      # Run the LLM review script
+      - name: Run LLM review
+        env:
+          # Pass the PR author for skip check
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          # Pass the skip users separated by commas
+          # Load from secrets to be extra sneaky or just list here
+          # SKIPPED_USERS: ${{ secrets.SKIP_USERS }}
+          SKIPPED_USERS: "github-actions"
+          # Pass the OpenAI API key from secrets for llm calls
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          # Pass the github pr base sha and head sha for the diff
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          # event.after is the sha for sync events
+          HEAD_SHA: ${{ github.event.after || github.event.pull_request.head.sha }}
+          # Pass GitHub context variables to the script
+          OWNER: ${{ github.event.repository.owner.login }}
+          # Repository name in the format of owner/repo
+          REPO_NAME: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.number }}
+          # Pass the Actions GitHub token for the script to comment on the PR
+          # This token is automatically created by GitHub Actions
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # Run the LLM review script from the .github/scripts directory
+        run: python .github/scripts/llm_review.py

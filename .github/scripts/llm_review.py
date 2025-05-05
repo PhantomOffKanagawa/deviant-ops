@@ -13,6 +13,8 @@ import requests
 SKIPPED_USERS = os.environ.get("SKIPPED_USERS", "").split(",")
 PR_AUTHOR = os.environ.get("PR_AUTHOR")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+BASE_REF = os.environ.get("BASE_SHA")
+HEAD_REF = os.environ.get("HEAD_SHA")
 OWNER = os.environ.get("OWNER")
 REPO_NAME = os.environ.get("REPO_NAME")
 PR_NUMBER = os.environ.get("PR_NUMBER")
@@ -32,14 +34,31 @@ if PR_AUTHOR in SKIPPED_USERS:
     # Return a success state to GitHub Actions
     sys.exit(0)
 
+# Explicitly check if BASE_REF and HEAD_REF to avoid warning
+if not BASE_REF or not HEAD_REF:
+    # Provide context in github actions logs
+    print("BASE_REF or HEAD_REF is not set. Cannot proceed with the review.")
+    # Return a failure state to GitHub Actions
+    sys.exit(1)
+
 # Step 3: Get the diff from the PR
 try:
-    # Use git diff command to get the diff of the PR
-    diff = subprocess.check_output(
-        # origin/main...HEAD gets the diff between the main branch and the current HEAD
-        # This assumes that the PR is based on the main branch based on pr requirement of main branch
-        ["git", "diff", f"origin/main...HEAD"], text=True
-    )
+    # First, try to fetch the main branch to ensure it exists
+    subprocess.run(["git", "fetch", "origin", "main"], check=False)
+    
+    try:
+        # Use git diff command to get the diff of the PR
+        diff = subprocess.check_output(
+            # Try to get the diff using the environment variables
+            # From https://docs.github.com/en/webhooks/webhook-events-and-payloads?actionType=opened#pull_request
+            ["git", "diff", BASE_REF, HEAD_REF], text=True
+        )
+    except Exception as e:
+        # Fallback: try to get all changes in the current branch
+        print("Failed to get diff using origin/main...HEAD, trying alternative approach")
+        diff = subprocess.check_output(
+            ["git", "diff"], text=True
+        )
     
 except subprocess.CalledProcessError as e:
     # Catch any errors from the git command
@@ -75,6 +94,8 @@ Respond with:
 - PASS: if the code meets the criteria.
 - FAIL: if the code lacks cheerfulness or emojis.
 
+> Respond first with only PASS or FAIL and then the review.
+
 Provide a brief explanation.
 
 Code Diff:
@@ -109,15 +130,19 @@ print(message)
 # Check for PASS or FAIL in the response
 # Check if the response starts with "PASS: " or "FAIL: "
 # TODO: Improve the parsing with re
-passed = (message and message[0:6].lower() == "pass: ")
+passed = (message and "PASS" in message)
 # If the response starts with "PASS: " or "FAIL: ", remove it from the message
-message = message[6:] if (message and (passed or message[0:6].lower() == "fail: ")) else message
+message = message[6:] if (message and (message[0:6].lower() == "pass: " or message[0:6].lower() == "fail: ")) else message
 
 # Step 4: Add comment to PR
 # Format the request URI for the GitHub API
-request_uri = f"https://api.github.com/repos/{OWNER}/{REPO_NAME}/pulls/{PR_NUMBER}/comments"
+# github.repository / REPO_NAME is the full name of the repository in the format "owner/repo"
+# Use the issues endpoint to add a comment to the PR as PRs are issues in GitHub
+# A PR endpoint would require a filename and commit ID which is more complex to get
+request_uri = f"https://api.github.com/repos/{REPO_NAME}/issues/{PR_NUMBER}/comments"
 # Set the request headers and body
-# Following https://docs.github.com/en/rest/pulls/comments?apiVersion=2022-11-28#create-a-review-comment-for-a-pull-request
+# Actually following https://docs.github.com/en/rest/issues/comments?apiVersion=2022-11-28
+# Also see https://docs.github.com/en/rest/pulls/comments?apiVersion=2022-11-28#create-a-review-comment-for-a-pull-request
 request_headers = {
     "Accept": "application/vnd.github+json",
     "Authorization": f"Bearer {GITHUB_TOKEN}",
@@ -141,6 +166,8 @@ response = requests.post(
 # Check if the request was not successful
 if response.status_code != 201:
     print("Failed to add comment to PR.")
+    print(f"Response: {response.status_code} - {response.text}")
+    print(response.json())
     sys.exit(1)
     
 # Step 5: Return success state or fail
