@@ -49,7 +49,9 @@ DeviantOps is a GitHub Action that only lets PRs into your protected branches if
 
 ### ✨ Sample Response
 
-This is just an absolute *gem* 💎 of a PR:
+This is just an absolute ✨*gem*✨ 💎💎💎 of a PR:
+
+Honestly just outshining ☀️ the rest of the codebase 😎😎😎
 
 ---
 
