@@ -134,7 +134,8 @@ message = message[6:] if (message and (passed or message[0:6].lower() == "fail: 
 
 # Step 4: Add comment to PR
 # Format the request URI for the GitHub API
-request_uri = f"https://api.github.com/repos/{OWNER}/{REPO_NAME}/pulls/{PR_NUMBER}/comments"
+# github.repository is the full name of the repository in the format "owner/repo"
+request_uri = f"https://api.github.com/repos/{REPO_NAME}/pulls/{PR_NUMBER}/comments"
 # Set the request headers and body
 # Following https://docs.github.com/en/rest/pulls/comments?apiVersion=2022-11-28#create-a-review-comment-for-a-pull-request
 request_headers = {

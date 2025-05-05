@@ -56,6 +56,7 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           # Pass GitHub context variables to the script
           OWNER: ${{ github.event.repository.owner.login }}
+          # Repository name in the format of owner/repo
           REPO_NAME: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.number }}
           # Pass the Actions GitHub token for the script to comment on the PR
