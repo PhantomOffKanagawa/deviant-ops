@@ -192,10 +192,8 @@ if passed:
 else:
     comment_body += "### ❌ FAILED\n\n"
 
-# Add review message in a blockquote
-replacement = '\n> '
-search = '\n'
-comment_body += f"> {message.replace(search, replacement)}\n\n"
+# Add review message
+comment_body += f"{message}\n\n"
 
 # Add improvements if any
 if improvements and not passed:
