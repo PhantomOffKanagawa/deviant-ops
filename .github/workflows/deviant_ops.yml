@@ -53,7 +53,8 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           # Pass the github pr base sha and head sha for the diff
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          # event.after is the sha for sync events
+          HEAD_SHA: ${{ github.event.after || github.event.pull_request.head.sha }}
           # Pass GitHub context variables to the script
           OWNER: ${{ github.event.repository.owner.login }}
           # Repository name in the format of owner/repo
