@@ -94,6 +94,8 @@ Respond with:
 - PASS: if the code meets the criteria.
 - FAIL: if the code lacks cheerfulness or emojis.
 
+> Respond first with only PASS or FAIL and then the review.
+
 Provide a brief explanation.
 
 Code Diff:
@@ -128,9 +130,9 @@ print(message)
 # Check for PASS or FAIL in the response
 # Check if the response starts with "PASS: " or "FAIL: "
 # TODO: Improve the parsing with re
-passed = (message and message[0:6].lower() == "pass: ")
+passed = (message and "PASS" in message)
 # If the response starts with "PASS: " or "FAIL: ", remove it from the message
-message = message[6:] if (message and (passed or message[0:6].lower() == "fail: ")) else message
+message = message[6:] if (message and (message[0:6].lower() == "pass: " or message[0:6].lower() == "fail: ")) else message
 
 # Step 4: Add comment to PR
 # Format the request URI for the GitHub API
