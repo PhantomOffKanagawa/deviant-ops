@@ -49,12 +49,9 @@ DeviantOps is a GitHub Action that only lets PRs into your protected branches if
 
 ### ✨ Sample Response
 
-> While the comments do add a bit of context, this code diff lacks the vibrant cheerfulness and delightful emojis that bring joy to our code reviewing hearts! 🌟  
-> Consider adding some cheerful emojis to the comments to express the joy of arithmetic operations!  
-> FAIL
+This is just an absolute ✨*gem*✨ 💎💎💎 of a PR:
 
-> 🎉 The code diff is definitely cheerful and filled with just the right amount of cheer 🥳 and emojis 🤪! You've added some fun commentary 🍔 and cheeky expressions like "yummy yummy data" 👅👅👅, and "Tee-hee" 👉😏👈, which bring a smile and make the code more readable and entertaining. Although there's always room for more joyful flair 🎈, this update surely succeeds in adding a dash of happiness to the codebase. Keep it up! 🌟  
-> PASS
+Honestly just outshining ☀️ the rest of the codebase 😎😎😎
 
 ---
 
